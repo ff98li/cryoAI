@@ -6,6 +6,8 @@ from torch.utils.data import Dataset
 import torchvision.transforms.functional as tvf
 import numpy as np
 import os
+import sys
+import pkg_resources
 from .geom_utils import euler_angles2matrix
 from .ctf_utils import primal_to_fourier_2D, primal_to_fourier_3D, fourier_to_primal_2D
 from .mask_utils import Mask
@@ -34,11 +36,14 @@ class StarfileDataLoader(Dataset):
 
         self.path_to_starfile = config.path_to_starfile
         self.starfile = config.starfile
-        self.df = starfile.open(os.path.join(self.path_to_starfile, self.starfile))
+        starfile_ver = pkg_resources.get_distribution('starfile').version
+        if pkg_resources.parse_version(starfile_ver) <= pkg_resources.parse_version('0.4.5'):
+            self.df = starfile.open(os.path.join(self.path_to_starfile, self.starfile))
+        else:
+            self.df = starfile.read(os.path.join(self.path_to_starfile, self.starfile))
         self.sidelen_input = sidelen_input
         self.scale_images = config.scale_images
         self.no_trans = config.no_trans
-
         self.resize_input = resize_input
         if self.resize_input is None:
             self.vol_sidelen = self.df['optics']['rlnImageSize'][0]
@@ -92,7 +97,9 @@ class StarfileDataLoader(Dataset):
             mrc_path = os.path.join(self.path_to_starfile, imgnamedf[1])
             pidx = int(imgnamedf[0]) - 1
             with mrcfile.mmap(mrc_path, mode='r', permissive=True) as mrc:
-                proj = torch.from_numpy(mrc.data[pidx]).float() * self.scale_images
+                ## read-in numpy memmap not writtable
+                mrc_array = np.copy(mrc.data[pidx])
+                proj = torch.from_numpy(mrc_array) * self.scale_images
             proj = proj[None, :, :]  # add a dummy channel (for consistency w/ img fmt)
 
             proj_input = tvf.resize(proj, [self.sidelen_input]*2)
