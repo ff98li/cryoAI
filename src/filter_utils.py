@@ -45,7 +45,8 @@ class GaussianPyramid(nn.Module):
         kernels: list of torch.Tensor
         """
         coords = torch.arange(-(size // 2), size // 2 + 1, dtype=torch.float32)
-        xy = torch.stack(torch.meshgrid(coords, coords),dim=0)
+        xy = torch.stack(torch.meshgrid(coords, coords, indexing = "ij"),
+                         dim=0)
         kernels = [torch.exp(-(xy ** 2).sum(0) / (2 * var * scaling ** i)) for i in range(scales)]
         kernels = torch.stack(kernels,dim=0)
         kernels /= kernels.sum((1, 2), keepdims=True)

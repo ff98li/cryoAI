@@ -73,13 +73,15 @@ class ImplicitFourierVolume(VolumeBase):
         self.is_chiral = False  # boolean that tells us if the current representation is the chiral transform of gt
 
         lincoords = torch.linspace(-1., 1., self.img_sz)
-        [X, Y] = torch.meshgrid([lincoords, lincoords])
+        [X, Y] = torch.meshgrid([lincoords, lincoords],
+                                indexing = "ij")
         coords = torch.stack([Y, X, torch.zeros_like(X)], dim=-1)
         coords = shift_coords(coords, 1., 1., 0, img_sz, img_sz, 1)
         self.register_buffer('plane_coords', coords.reshape(-1, 3))
 
         lincoords = torch.linspace(-1., 1., self.img_sz)
-        [X, Y, Z] = torch.meshgrid([lincoords, lincoords, lincoords])
+        [X, Y, Z] = torch.meshgrid([lincoords, lincoords, lincoords],
+                                   indexing = "ij")
         coords = torch.stack([Y, X, Z], dim=-1)
         coords = shift_coords(coords, 1., 1., 1., img_sz, img_sz, img_sz)
         self.register_buffer('coords_3d', coords.reshape(-1, 3))

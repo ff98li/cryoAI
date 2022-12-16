@@ -196,7 +196,7 @@ class DensityMapProjectionSimulator(Dataset):
 
         ''' Planar coordinates '''
         lincoords = torch.linspace(-x_lim, x_lim, self.projection_sz[0])
-        [X, Y] = torch.meshgrid([lincoords, lincoords])
+        [X, Y] = torch.meshgrid([lincoords, lincoords], indexing = "ij")
         coords = torch.stack([Y, X, torch.zeros_like(X)], dim=-1)
         coords = shift_coords(coords, 1., 1., 0, self.projection_sz[0], self.projection_sz[0], 1)  # place DC component at (0, 0, 0)
         self.plane_coords = coords.reshape(-1, 3)

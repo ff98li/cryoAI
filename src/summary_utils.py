@@ -81,7 +81,8 @@ def make_heavy_summary(writer, model, model_input, model_output, rots_pred, rots
     # Save mrc file
     if write_mrc:
         volume = model.pred_map.make_volume()
-        volume = torch.tensor(volume).detach().cpu()
+        #volume = torch.tensor(volume).detach().cpu()
+        volume = volume.detach().clone().cpu()
         filename = os.path.join(root_dir_path, 'reconstruction.mrc')
         save_mrc(filename, volume, voxel_size=model.ctf.resolution, header_origin=None)
 

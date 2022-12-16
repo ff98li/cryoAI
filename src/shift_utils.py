@@ -61,7 +61,7 @@ class Shift(ShiftBase):
         n2 = float(self.size // 2)
         ax = torch.arange(-n2, n2 + self.size % 2)
         ax = torch.flip(ax, dims=[0])
-        mx, my = torch.meshgrid(ax, ax)
+        mx, my = torch.meshgrid(ax, ax, indexing = "ij")
 
         # shape SizexSize
         self.register_buffer("mx", mx.clone())

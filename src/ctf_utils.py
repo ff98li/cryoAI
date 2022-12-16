@@ -142,7 +142,7 @@ class CTFRelion(CTFBase):
         self.precomputed_filters = precompute
 
         ax = torch.linspace(-1./(2.*resolution), 1/(2.*resolution), self.size)
-        mx, my = torch.meshgrid(ax, ax)
+        mx, my = torch.meshgrid(ax, ax, indexing = "ij")
         self.register_buffer("r2", mx ** 2 + my ** 2)
         self.register_buffer("r", torch.sqrt(self.r2))
         self.register_buffer("angleFrequency", torch.atan2(my, mx))
