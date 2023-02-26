@@ -225,6 +225,7 @@ class CTFRelion(CTFBase):
     def oversample_multiply_crop(self, x_fourier, hFourier):
         # we assume that the shape of the CTF is always going to be bigger
         # than the size of the input image
+
         input_sz = x_fourier.shape[-1]
         if input_sz != self.size_after_fm:
             x_primal = fourier_to_primal_2D(x_fourier)
@@ -267,6 +268,7 @@ class CTFRelion(CTFBase):
         if x_fourier.dim() == 3:
             x_fourier = x_fourier[None, ...]
         # x_fourier: B, 1, S, S
+        ## re: it seems like [2*chunk size, 1, S, S] to me
         batch_size = len(idcs)
         cpu_params = {}
         if ctf_params:
@@ -278,7 +280,7 @@ class CTFRelion(CTFBase):
             hFourier = self.hFourier[idcs, :, :]
         else:
             hFourier = self.get_ctf(idcs, batch_size, cpu_params=cpu_params, frequency_marcher=frequency_marcher)
-
+        ## hFourier.shape = [8, 128, 128]
 
         if self.flip_images:
             flipped_hFourier = torch.flip(hFourier, [1, 2])

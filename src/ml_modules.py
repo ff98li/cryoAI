@@ -99,7 +99,7 @@ class Sine(nn.Module):
 class RandSine(nn.Module):
     def __init__(self, mu_w0=50, std_w0=40, num_features=256):  # 30, 29
         super().__init__()
-        self.w0 = mu_w0 + 2. * std_w0 * (torch.rand(num_features, dtype=torch.float32) - .5).cuda()
+        self.w0 = mu_w0 + 2. * std_w0 * (torch.rand(num_features, dtype=torch.float32) - .5).cuda() ## TODO: change .cuda() to device(), or it won't run with cpu only
 
     def forward(self, input):
         # See paper sec. 3.2, final paragraph, and supplement Sec. 1.5 for discussion of factor 30

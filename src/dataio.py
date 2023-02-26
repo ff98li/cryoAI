@@ -271,9 +271,12 @@ class DensityMapProjectionSimulator(Dataset):
                         defocusV = self.ctf_generator.defocusV.reshape(1, 1)
                         angleAstigmatism = self.ctf_generator.angleAstigmatism.reshape(1, 1)
                 else:
-                    defocusU = 0
-                    defocusV = 0
-                    angleAstigmatism = 0
+                    defocusU = torch.tensor([0])
+                    defocusV = torch.tensor([0])
+                    angleAstigmatism = torch.tensor([0])
+                    defocusU = defocusU.reshape(1, 1)
+                    defocusV = defocusV.reshape(1, 1)
+                    angleAstigmatism = angleAstigmatism.reshape(1, 1)
 
             ''' Shift '''
             if self.shift_generator is not None:
@@ -282,8 +285,10 @@ class DensityMapProjectionSimulator(Dataset):
                     shiftX = self.shift_generator.shifts[idx, 0]
                     shiftY = self.shift_generator.shifts[idx, 1]
                 else:
-                    shiftX = 0.
-                    shiftY = 0.
+                    shiftX = torch.tensor([0.])
+                    shiftY = torch.tensor([0.])
+                    shiftX = shiftX.reshape(1, 1)
+                    shiftY = shiftY.reshape(1, 1)
 
             ''' Update primal proj '''
             proj = fourier_to_primal_2D(fproj).real

@@ -195,7 +195,7 @@ class CryoAI(nn.Module):
         output_dict: dictionary
         """
         start_time = time.time()
-        proj = in_dict['proj_input']
+        proj = in_dict['proj_input'] ## [8, 1, 128, 128]
 
         # Schedulers
         for name, scheduler in self.schedulers.items():
@@ -212,21 +212,27 @@ class CryoAI(nn.Module):
         else:
             if self.config.pose_estimation == 'encoder':
                 if self.gaussian_pyramid:
-                    proj = self.gaussian_filters(proj)
+                    proj = self.gaussian_filters(proj) ## [8, 5, 128, 128]
 
-                latent_code = torch.flatten(self.cnn_encoder(proj), start_dim=1)
+                latent_code = self.cnn_encoder(proj)
+                latent_code = torch.flatten(latent_code, start_dim=1)
+                ## cnn_encoder: return [16, 256, 2, 2]
+                ## latent_code.shape = [16, 1024]
                 latent_code_pose = self.orientation_encoder(latent_code)
+                ## latent_code_pose.shape = [16, 256]
                 latent_code_prerot = self.orientation_regressor(latent_code_pose)
+                ## latent_code_prerot.shape = [16, 6]
             else:
                 latent_code_prerot = self.poses(in_dict['idx'])
 
             # Interpret the latent code as a rotation
             pred_rotmat = self.latent_to_rot3d_fn(latent_code_prerot)
+            ## pred_rotmat.shape = [16, 3, 3]
 
         encoder_time = time.time()
 
         # Shift
-        if self.config.use_shift == 'gt':
+        if self.config.use_shift == 'gt': ## gt for ground truth
             pred_shift_params = {k: in_dict[k] for k in ('shiftX', 'shiftY')
                             if k in in_dict}
         elif self.config.use_shift == 'encoder':
@@ -235,9 +241,11 @@ class CryoAI(nn.Module):
                     if latent_code is None else latent_code
             else:
                 latent_code = torch.flatten(self.cnn_encoder(proj), start_dim=1) if latent_code is None else latent_code
-            shift_params = self.shift_encoder(latent_code)
+            shift_params = self.shift_encoder(latent_code) ## [16, 2]
             pred_shift_params = {'shiftX': shift_params[..., 0].reshape(-1),
                                  'shiftY': shift_params[..., 1].reshape(-1)}
+            ## shift_params[..., 0].shape = [16]
+            ## shift_params[..., 1].shape = [16]
         else:
             raise NotImplementedError
 
@@ -245,6 +253,7 @@ class CryoAI(nn.Module):
         if self.config.use_ctf == 'gt':
             pred_ctf_params = {k: in_dict[k] for k in ('defocusU', 'defocusV', 'angleAstigmatism')
                                if k in in_dict}
+            ## pred_ctf_params[k].shape = [8, 1, 1]
         else:
             raise NotImplementedError
 
@@ -252,16 +261,17 @@ class CryoAI(nn.Module):
 
         # Query the volume (slicing / projection)
         pred_fproj_prectf = self.pred_map(pred_rotmat)
+        ## pred_fproj_prectf.shape = [16, 1, 128, 128]
 
         decoder_time = time.time()
 
         # Apply the remaining step of the forward model: CTF + Shift
         pred_fproj = self.ctf(
-            pred_fproj_prectf,
-            in_dict['idx'],
-            pred_ctf_params,
-            mode=self.config.use_ctf,
-            frequency_marcher=self.frequency_marcher
+            x_fourier = pred_fproj_prectf,
+            idcs = in_dict['idx'],
+            ctf_params = pred_ctf_params,
+            mode = self.config.use_ctf,
+            frequency_marcher = self.frequency_marcher
         )
         pred_fproj = self.shift(
             pred_fproj,
@@ -270,6 +280,7 @@ class CryoAI(nn.Module):
             mode=self.config.use_shift,
             frequency_marcher=self.frequency_marcher
         )
+        ## pred_fproj.shape = [16, 1, 128, 128]
 
         end_time = time.time()
 
@@ -292,6 +303,7 @@ class CryoAI(nn.Module):
         # Make sure we are in sync by bringing back the proj to the primal domain
         if self.config.data_loss_domain == 'primal' or self.config.compute_proj:
             pred_proj = fourier_to_primal_2D(pred_fproj)
+            ## pred_proj.shape = [16, 1, 128, 128], same for .real
             output_dict['proj'] = pred_proj.real
 
         fproj_gt = in_dict['fproj']  # B, 1, S, S

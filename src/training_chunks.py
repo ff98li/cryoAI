@@ -243,6 +243,12 @@ def train(model,
                     rots_gt[ind] = chunked_model_input['rotmat'].detach().cpu().numpy()
                     if flip_images:
                         rotmat_pred = correct_flips_rotations(chunked_model_output)
+                        ## chunked_model_output['proj'].shape = [16, 1, 128, 128]
+                        ## chunked_model_output['proj_gt'].shape = [8, 1, 128, 128]
+                        ## chunked_model_output['fproj'].shape = [16, 1, 128, 128]
+                        ## chunked_model_output['proj_gt'].shape = [8, 1, 128, 128]
+                        ## How?
+                        ## [16, 3, 3] -> [8, 3, 3]
                     else:
                         rotmat_pred = chunked_model_output['rotmat']
                     rots_pred[ind] = rotmat_pred.detach().cpu().numpy()
